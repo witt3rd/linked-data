@@ -1,5 +1,8 @@
 package linkedData
 
-object Hi {
-  def main(args: Array[String]) = println("Hi!")
+object Main {
+  def main(args: Array[String]) : Unit = {
+    val x = new NTriples("<foo> <bar> <baz> .").line.run()
+    println(x)
+  }  
 }
