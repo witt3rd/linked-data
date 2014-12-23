@@ -20,17 +20,17 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
   // ntripleDoc ::= line*  
 
   // line ::= ws* (comment | triple) ? eoln  
-  def line = rule { blank | nonBlank }
-  private def blank = rule { zeroOrMore(ws) ~ EOI ~ push(Blank()) }
-  private def nonBlank = rule { (comment | triple) ~ EOI }
+  def line: Rule1[Line] = rule { blank | nonBlank }
+  private def blank: Rule1[Line] = rule { zeroOrMore(ws) ~ EOI ~ push(Blank()) }
+  private def nonBlank: Rule1[Line] = rule { (comment | triple) ~ EOI }
 
   // comment ::= '#' (character - ( cr | lf ) )*  
-  private def comment = rule {
+  private def comment: Rule1[Comment] = rule {
     '#' ~ zeroOrMore(ws) ~ capture(zeroOrMore(CharPredicate.Printable)) ~> (Comment(_))
   }
 
   // triple ::= subject ws+ predicate ws+ object ws* '.' ws*   
-  private def triple = rule {
+  private def triple: Rule1[Triple] = rule {
     subject ~ oneOrMore(ws) ~ predicate ~ oneOrMore(ws) ~ obj ~ zeroOrMore(ws) ~ '.' ~ zeroOrMore(ws) ~>
       ((s,p,o) => Triple(s,p,o))
   }
