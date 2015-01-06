@@ -2,7 +2,7 @@ package linkedData
 
 import org.parboiled2._
 
-class NTriples(val input: ParserInput) extends Parser with StringBuilding {
+class NTriples(val input: ParserInput) extends Parser {
 
   // Main parsed types
   trait Line       // A parsed line; can either be Blank, Comment, or Triple
@@ -35,13 +35,13 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
   //     ((s,p,o) => Triple(s,p,o))
   // }
   private def triple: Rule1[Triple] = rule {
-    zeroOrMore(ws) ~ subject ~>
-      ((s : Subject) => Triple(s,UriRef(""),UriRef("")))
+    zeroOrMore(ws) ~ subject ~ zeroOrMore(ANY) ~>
+      ((s : Subject) => Triple(s, UriRef(""), UriRef("")))
   }
 
-  // // subject ::= uriref | namedNode   
+  // subject ::= uriref | namedNode   
   private def subject: Rule1[Subject] = rule {
-    capture(zeroOrMore(CharPredicate.Printable)) ~> (c => UriRef(c))
+    '<' ~ capture(zeroOrMore(!'>' ~ ANY)) ~> (UriRef(_))
   }
 
 // ### Trivial S, P, O
