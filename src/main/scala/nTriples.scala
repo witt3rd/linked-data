@@ -41,28 +41,8 @@ class NTriples(val input: ParserInput) extends Parser {
 
   // subject ::= uriref | namedNode   
   private def subject: Rule1[Subject] = rule {
-    '<' ~ capture(zeroOrMore(!'>' ~ ANY)) ~> (UriRef(_))
+    uriref | namedNode
   }
-
-// ### Trivial S, P, O
-// For now, let's just capture some text and return a `UriRef` (which, if you will recall, is one of our allowable types for any of `Subject`, `Predicate`, or `Object`).
-
-// ~~~~ { .scala }
-//   // subject ::= uriref | namedNode   
-//   private def subject: Rule1[Subject] = rule {
-//     capture(zeroOrMore(CharPredicate.Printable)) ~> (UriRef(_))
-//   }
-
-//   // predicate ::= uriref   
-//   private def predicate: Rule1[Predicate] = rule {
-//     capture(zeroOrMore(CharPredicate.Printable)) ~> (UriRef(_))
-//   }
-
-//   // object ::= uriref | namedNode | literal   
-//   private def obj: Rule1[Object] = rule {
-//     capture(zeroOrMore(CharPredicate.Printable)) ~> (UriRef(_))
-//   }
-// ~~~~
 
   // // predicate ::= uriref   
   // private def predicate: Rule1[Predicate] = rule {
@@ -75,10 +55,14 @@ class NTriples(val input: ParserInput) extends Parser {
   // }
 
   // uriref ::= '<' absoluteURI '>'  
-  private def uriref = ???
+  private def uriref: Rule1[UriRef] = rule {
+    '<' ~ capture(zeroOrMore(!'>' ~ ANY)) ~> (UriRef(_))    
+  }
 
   // namedNode ::= '_:' name  
-  private def namedNode = ???
+  private def namedNode: Rule1[NamedNode] = rule {
+    '_' ~ ':' ~ capture(name) ~> (NamedNode(_))    
+  }
 
   // literal ::= '"' string '"'   
   private def literal = ???
@@ -107,7 +91,9 @@ class NTriples(val input: ParserInput) extends Parser {
   private def string = ???
 
   // name ::= [A-Za-z][A-Za-z0-9]*   
-  private def name = ???
+  private def name = rule {
+    CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum)
+  }
 
   // character ::= [#x20-#x7E] /* US-ASCII space to decimal 127 */ 
   private def character = { CharPredicate.Printable }
