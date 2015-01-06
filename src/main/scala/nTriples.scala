@@ -26,29 +26,53 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
 
   // comment ::= '#' (character - ( cr | lf ) )*  
   private def comment: Rule1[Comment] = rule {
-    '#' ~ zeroOrMore(ws) ~ capture(zeroOrMore(CharPredicate.Printable)) ~> (Comment(_))
+    '#' ~ zeroOrMore(ws) ~ capture(zeroOrMore(CharPredicate.Printable)) ~> (c => Comment(c))
   }
 
   // triple ::= subject ws+ predicate ws+ object ws* '.' ws*   
+  // private def triple: Rule1[Triple] = rule {
+  //   subject ~ oneOrMore(ws) ~ predicate ~ oneOrMore(ws) ~ obj ~ zeroOrMore(ws) ~ '.' ~ zeroOrMore(ws) ~>
+  //     ((s,p,o) => Triple(s,p,o))
+  // }
   private def triple: Rule1[Triple] = rule {
-    subject ~ oneOrMore(ws) ~ predicate ~ oneOrMore(ws) ~ obj ~ zeroOrMore(ws) ~ '.' ~ zeroOrMore(ws) ~>
-      ((s,p,o) => Triple(s,p,o))
+    zeroOrMore(ws) ~ subject ~>
+      ((s : Subject) => Triple(s,UriRef(""),UriRef("")))
   }
 
-  // subject ::= uriref | namedNode   
+  // // subject ::= uriref | namedNode   
   private def subject: Rule1[Subject] = rule {
-    capture(zeroOrMore(CharPredicate.Printable)) ~> (UriRef(_))
+    capture(zeroOrMore(CharPredicate.Printable)) ~> (c => UriRef(c))
   }
 
-  // predicate ::= uriref   
-  private def predicate: Rule1[Predicate] = rule {
-    capture(zeroOrMore(CharPredicate.Printable)) ~> (UriRef(_))
-  }
+// ### Trivial S, P, O
+// For now, let's just capture some text and return a `UriRef` (which, if you will recall, is one of our allowable types for any of `Subject`, `Predicate`, or `Object`).
 
-  // object ::= uriref | namedNode | literal   
-  private def obj: Rule1[Object] = rule {
-    capture(zeroOrMore(CharPredicate.Printable)) ~> (UriRef(_))
-  }
+// ~~~~ { .scala }
+//   // subject ::= uriref | namedNode   
+//   private def subject: Rule1[Subject] = rule {
+//     capture(zeroOrMore(CharPredicate.Printable)) ~> (UriRef(_))
+//   }
+
+//   // predicate ::= uriref   
+//   private def predicate: Rule1[Predicate] = rule {
+//     capture(zeroOrMore(CharPredicate.Printable)) ~> (UriRef(_))
+//   }
+
+//   // object ::= uriref | namedNode | literal   
+//   private def obj: Rule1[Object] = rule {
+//     capture(zeroOrMore(CharPredicate.Printable)) ~> (UriRef(_))
+//   }
+// ~~~~
+
+  // // predicate ::= uriref   
+  // private def predicate: Rule1[Predicate] = rule {
+  //   capture(zeroOrMore(CharPredicate.Printable)) ~ oneOrMore(ws) ~> (UriRef(_))
+  // }
+
+  // // object ::= uriref | namedNode | literal   
+  // private def obj: Rule1[Object] = rule {
+  //   capture(zeroOrMore(CharPredicate.Printable)) ~ oneOrMore(ws) ~> (UriRef(_))
+  // }
 
   // uriref ::= '<' absoluteURI '>'  
   private def uriref = ???
@@ -59,21 +83,22 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
   // literal ::= '"' string '"'   
   private def literal = ???
 
-  // ws ::= space | tab  
-  // def ws = rule { zeroOrMore(CharPredicate(" \t")) }
-  private def ws = rule { space | tab }  
+  // absoluteURI ::= ( character - ( '<' | '>' | space ) )+   
+  private def absoluteUri = ???
 
+  // We don't need end-of-line stuff, since we are processing one line at a time
   // eoln ::= cr | lf | cr lf  
-  private def eoln = rule { cr | lf | cr ~ lf }  
+  // private def eoln = rule { cr | lf | cr ~ lf }  
+  // cr ::= #xD /* US-ASCII carriage return - decimal 13 */  
+  // private def cr = CharPredicate('\r')
+  // lf ::= #xA /* US-ASCII linefeed - decimal 10 */   
+  // private def lf = CharPredicate('\n')
+
+  // ws ::= space | tab  
+  private def ws = rule { space | tab }  
 
   // space ::= #x20 /* US-ASCII space - decimal 32 */   
   private def space = CharPredicate(' ')
-
-  // cr ::= #xD /* US-ASCII carriage return - decimal 13 */  
-  private def cr = CharPredicate('\r')
-
-  // lf ::= #xA /* US-ASCII linefeed - decimal 10 */   
-  private def lf = CharPredicate('\n')
 
   // tab ::= #x9 /* US-ASCII horizontal tab - decimal 9 */  
   private def tab = CharPredicate('\t')
@@ -83,9 +108,6 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
 
   // name ::= [A-Za-z][A-Za-z0-9]*   
   private def name = ???
-
-  // absoluteURI ::= ( character - ( '<' | '>' | space ) )+   
-  private def absoluteUri = ???
 
   // character ::= [#x20-#x7E] /* US-ASCII space to decimal 127 */ 
   private def character = { CharPredicate.Printable }
