@@ -52,7 +52,7 @@ class NTriples(val input: ParserInput) extends Parser {
 
   // object ::= uriref | namedNode | literal   
   private def obj: Rule1[Object] = rule {
-    uriref | namedNode
+    uriref | namedNode | literal
   }
 
   // uriref ::= '<' absoluteURI '>'  
@@ -66,7 +66,9 @@ class NTriples(val input: ParserInput) extends Parser {
   }
 
   // literal ::= '"' string '"'   
-  private def literal = ???
+  private def literal: Rule1[Literal] = rule {
+    '\"' ~ capture(zeroOrMore(!'\"' ~ ANY)) ~ '\"' ~ zeroOrMore(!'.' ~ ANY) ~> (Literal(_))
+  }
 
   // absoluteURI ::= ( character - ( '<' | '>' | space ) )+   
   private def absoluteUri = ???
