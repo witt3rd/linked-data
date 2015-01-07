@@ -1,9 +1,31 @@
 package linkedData
 
 import scala.collection.immutable
+import scala.io.Source
 
 object Main {
   def main(args: Array[String]) : Unit = {
+
+    // unitTest()
+    // return
+
+    if (args.size < 1) {
+      println("missing .nt file")
+      return
+    }
+
+    val Array(ntFile) = args
+
+    val lines = Source.fromFile(ntFile).getLines()
+    parse(lines)
+  }
+
+  private def parse(lines: Iterator[String]) : Unit = {
+    val triples = lines map {l => new NTriples(l).line.run()}    
+    triples foreach println
+  }
+
+  private def unitTest() : Unit = {
 
     val ntDoc = 
     """
@@ -17,10 +39,7 @@ _:BX2Db3de8bfX3A149861d9206X3AX2D7ffe <http://www.w3.org/1999/02/22-rdf-syntax-n
 _:BX2Db3de8bfX3A149861d9206X3AX2D7ffe <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:BX2Db3de8bfX3A149861d9206X3AX2D7ffd .
     """
 
-    val triples = ntDoc.lines map {line =>
-      new NTriples(line).line.run()
-    }
+    parse(ntDoc.lines)
 
-    triples.foreach(println)
-  }  
+  }
 }
