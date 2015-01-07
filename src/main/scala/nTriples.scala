@@ -1,9 +1,9 @@
 package linkedData
 
+import scala.util.{ Try, Success, Failure }
 import org.parboiled2._
 
-class NTriples(val input: ParserInput) extends Parser {
-
+object NTriples {
   // Main parsed types
   trait Line       // A parsed line; can either be Blank, Comment, or Triple
   trait Subject    // A triple's subject; can either be a uriref or namednode
@@ -17,6 +17,21 @@ class NTriples(val input: ParserInput) extends Parser {
   case class Blank() extends Line
   case class Comment(text: String) extends Line
   case class Triple(subj: Subject, pred: Predicate, obj: Object) extends Line
+
+  def parse(lines: Iterator[String]) : Iterator[Try[Line]] = {
+    lines map {l => 
+      val p = new NTriples(l)
+      p.line.run() match {
+        case Failure(e: ParseError) => Failure(new Exception(p.formatError(e)))
+        case x                      => x
+      }
+    }    
+  }
+}
+
+class NTriples(val input: ParserInput) extends Parser {
+
+  import NTriples._
 
   // ntripleDoc ::= line*  
 
