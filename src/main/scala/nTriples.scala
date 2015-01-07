@@ -8,10 +8,11 @@ class NTriples(val input: ParserInput) extends Parser {
   trait Line       // A parsed line; can either be Blank, Comment, or Triple
   trait Subject    // A triple's subject; can either be a uriref or namednode
   trait Predicate  // A triple's predicate; can either be a uriref or namednode
-  trait Object     // A triple's object; will always be a uriref
+  trait Object     // A triple's object; will always be a uriref or or namednode or literal
 
   case class UriRef(uri: String) extends Subject with Object with Predicate
-  case class NamedNode(name: String) extends Subject with Predicate
+  case class NamedNode(name: String) extends Subject with Object with Predicate
+  case class Literal(value: String) extends Object
 
   case class Blank() extends Line
   case class Comment(text: String) extends Line
@@ -30,13 +31,13 @@ class NTriples(val input: ParserInput) extends Parser {
   }
 
   // triple ::= subject ws+ predicate ws+ object ws* '.' ws*   
-  // private def triple: Rule1[Triple] = rule {
-  //   subject ~ oneOrMore(ws) ~ predicate ~ oneOrMore(ws) ~ obj ~ zeroOrMore(ws) ~ '.' ~ zeroOrMore(ws) ~>
-  //     ((s,p,o) => Triple(s,p,o))
-  // }
-  private def triple: Rule1[Triple] = rule {
-    zeroOrMore(ws) ~ subject ~ zeroOrMore(ANY) ~>
-      ((s : Subject) => Triple(s, UriRef(""), UriRef("")))
+  private def triple: Rule1[Triple] = rule { 
+    zeroOrMore(ws) ~ subject ~ 
+    zeroOrMore(ws) ~ predicate ~ 
+    oneOrMore(ws)  ~ obj ~ 
+    zeroOrMore(ws) ~ '.' ~ 
+    zeroOrMore(ws) ~>
+      ((s: Subject, p: Predicate, o: Object) => Triple(s, p, o))
   }
 
   // subject ::= uriref | namedNode   
@@ -44,19 +45,19 @@ class NTriples(val input: ParserInput) extends Parser {
     uriref | namedNode
   }
 
-  // // predicate ::= uriref   
-  // private def predicate: Rule1[Predicate] = rule {
-  //   capture(zeroOrMore(CharPredicate.Printable)) ~ oneOrMore(ws) ~> (UriRef(_))
-  // }
+  // predicate ::= uriref   
+  private def predicate: Rule1[Predicate] = rule {
+    uriref
+  }
 
-  // // object ::= uriref | namedNode | literal   
-  // private def obj: Rule1[Object] = rule {
-  //   capture(zeroOrMore(CharPredicate.Printable)) ~ oneOrMore(ws) ~> (UriRef(_))
-  // }
+  // object ::= uriref | namedNode | literal   
+  private def obj: Rule1[Object] = rule {
+    uriref | namedNode
+  }
 
   // uriref ::= '<' absoluteURI '>'  
   private def uriref: Rule1[UriRef] = rule {
-    '<' ~ capture(zeroOrMore(!'>' ~ ANY)) ~> (UriRef(_))    
+    '<' ~ capture(zeroOrMore(!'>' ~ ANY)) ~ '>' ~> (UriRef(_))    
   }
 
   // namedNode ::= '_:' name  
