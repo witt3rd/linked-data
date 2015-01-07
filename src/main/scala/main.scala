@@ -7,8 +7,8 @@ import scala.util.{ Success, Failure }
 object Main {
   def main(args: Array[String]) : Unit = {
 
-    unitTest()
-    return
+    // unitTest()
+    // return
 
     if (args.size < 1) {
       println("missing .nt file")
