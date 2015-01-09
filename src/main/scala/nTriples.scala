@@ -12,7 +12,11 @@ object NTriples {
 
   case class UriRef(uri: String) extends Subject with Object with Predicate
   case class NamedNode(name: String) extends Subject with Object with Predicate
-  case class Literal(value: String) extends Object
+  case class Literal(
+    value: String,
+    lang: Option[String],
+    dataType: Option[UriRef]
+    ) extends Object
 
   case class Blank() extends Line
   case class Comment(text: String) extends Line
@@ -42,13 +46,13 @@ class NTriples(val input: ParserInput) extends Parser {
 
   // comment ::= '#' (character - ( cr | lf ) )*  
   private def comment: Rule1[Comment] = rule {
-    '#' ~ zeroOrMore(ws) ~ capture(zeroOrMore(CharPredicate.Printable)) ~> (c => Comment(c))
+    '#' ~ zeroOrMore(ws) ~ capture(zeroOrMore(CharPredicate.Printable)) ~> (Comment(_))
   }
 
   // triple ::= subject ws+ predicate ws+ object ws* '.' ws*   
   private def triple: Rule1[Triple] = rule { 
     zeroOrMore(ws) ~ subject ~ 
-    zeroOrMore(ws) ~ predicate ~ 
+    oneOrMore(ws) ~ predicate ~ 
     oneOrMore(ws)  ~ obj ~ 
     zeroOrMore(ws) ~ '.' ~ 
     zeroOrMore(ws) ~>
@@ -82,9 +86,21 @@ class NTriples(val input: ParserInput) extends Parser {
 
   // literal ::= '"' string '"'   
   private def literal: Rule1[Literal] = rule {
-    '\"' ~ capture(zeroOrMore(!'\"' ~ ANY)) ~ '\"' ~ zeroOrMore(!'.' ~ ANY) ~> (Literal(_))
+    quotedString ~ optional(lang) ~ optional(dataType) ~> 
+      ((v:String, l:Option[String], t:Option[UriRef]) => Literal(v,l,t))
   }
 
+  private def quotedString: Rule1[String] = rule {
+    '\"' ~ capture(zeroOrMore(!'\"' ~ ANY)) ~ '\"'
+  }
+
+  private def lang: Rule1[String] = rule {
+    '@' ~ capture(2.times(CharPredicate.Alpha))
+  }
+
+  private def dataType: Rule1[UriRef] = rule {
+    2.times('^') ~ uriref
+  }
   // absoluteURI ::= ( character - ( '<' | '>' | space ) )+   
   private def absoluteUri = ???
 
