@@ -22,7 +22,7 @@ object NTriples {
   case class Comment(text: String) extends Line
   case class Triple(subj: Subject, pred: Predicate, obj: Object) extends Line
 
-  def parse(lines: Iterator[String]) : Iterator[Try[Line]] = {
+  def parse(lines: Iterator[String]): Iterator[Try[Line]] = {
     lines map {l => 
       val p = new NTriples(l)
       p.line.run() match {
@@ -33,8 +33,9 @@ object NTriples {
   }
 }
 
-class NTriples(val input: ParserInput) extends Parser {
+class NTriples(val input: ParserInput) extends Parser with StringBuilding {
 
+  import CharPredicate.{Digit, Digit19, HexDigit}
   import NTriples._
 
   // ntripleDoc ::= line*  
@@ -91,16 +92,17 @@ class NTriples(val input: ParserInput) extends Parser {
   }
 
   private def quotedString: Rule1[String] = rule {
-    '\"' ~ capture(zeroOrMore(!'\"' ~ ANY)) ~ '\"'
+    '"' ~ clearSB() ~ Characters ~ '"' ~ push(sb.toString)
   }
 
   private def lang: Rule1[String] = rule {
-    '@' ~ capture(2.times(CharPredicate.Alpha))
+    '@' ~ capture(oneOrMore(!ws ~ CharPredicate.Printable))
   }
 
   private def dataType: Rule1[UriRef] = rule {
     2.times('^') ~ uriref
   }
+
   // absoluteURI ::= ( character - ( '<' | '>' | space ) )+   
   private def absoluteUri = ???
 
@@ -129,6 +131,34 @@ class NTriples(val input: ParserInput) extends Parser {
     CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum)
   }
 
-  // character ::= [#x20-#x7E] /* US-ASCII space to decimal 127 */ 
-  private def character = { CharPredicate.Printable }
+
+  //
+  // Taken directly from the Json parser example
+  // https://github.com/sirthias/parboiled2/blob/master/examples/src/main/scala/org/parboiled2/examples/JsonParser.scala
+  //
+
+  def Characters = rule { zeroOrMore(NormalChar | '\\' ~ EscapedChar) }
+
+  def NormalChar = rule { !QuoteBackslash ~ ANY ~ appendSB() }
+
+  def EscapedChar = rule (
+    QuoteSlashBackSlash ~ appendSB()
+      | 'b' ~ appendSB('\b')
+      | 'f' ~ appendSB('\f')
+      | 'n' ~ appendSB('\n')
+      | 'r' ~ appendSB('\r')
+      | 't' ~ appendSB('\t')
+      | Unicode ~> { code => sb.append(code.asInstanceOf[Char]); () }
+  )
+
+  def Unicode = rule { 'u' ~ capture(HexDigit ~ HexDigit ~ HexDigit ~ HexDigit) ~> (java.lang.Integer.parseInt(_, 16)) }
+
+  def WhiteSpace = rule { zeroOrMore(WhiteSpaceChar) }
+
+  // def ws(c: Char) = rule { c ~ WhiteSpace }
+
+  val WhiteSpaceChar = CharPredicate(" \n\r\t\f")
+  val QuoteBackslash = CharPredicate("\"\\")
+  val QuoteSlashBackSlash = QuoteBackslash ++ "/"
+
 }

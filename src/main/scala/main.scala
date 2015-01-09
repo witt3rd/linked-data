@@ -1,6 +1,5 @@
 package linkedData
 
-// import scala.collection.immutable
 import scala.io.Source
 import scala.util.{ Success, Failure }
 
@@ -8,7 +7,7 @@ object Main {
   def main(args: Array[String]) : Unit = {
 
     unitTest()
-    return
+    // return
 
     if (args.size < 1) {
       println("missing .nt file")
