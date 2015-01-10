@@ -35,7 +35,7 @@ object NTriples {
 
 class NTriples(val input: ParserInput) extends Parser with StringBuilding {
 
-  import CharPredicate.{Digit, Digit19, HexDigit}
+  import CharPredicate.{Alpha, AlphaNum, HexDigit, Printable}
   import NTriples._
 
   // ntripleDoc ::= line*  
@@ -47,7 +47,7 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
 
   // comment ::= '#' (character - ( cr | lf ) )*  
   private def comment: Rule1[Comment] = rule {
-    '#' ~ zeroOrMore(ws) ~ capture(zeroOrMore(CharPredicate.Printable)) ~> (Comment(_))
+    '#' ~ zeroOrMore(ws) ~ capture(zeroOrMore(Printable)) ~> (Comment(_))
   }
 
   // triple ::= subject ws+ predicate ws+ object ws* '.' ws*   
@@ -96,7 +96,7 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
   }
 
   private def lang: Rule1[String] = rule {
-    '@' ~ capture(oneOrMore(!ws ~ CharPredicate.Printable))
+    '@' ~ capture(oneOrMore(!ws ~ Printable))
   }
 
   private def dataType: Rule1[UriRef] = rule {
@@ -106,37 +106,18 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
   // absoluteURI ::= ( character - ( '<' | '>' | space ) )+   
   private def absoluteUri = ???
 
-  // We don't need end-of-line stuff, since we are processing one line at a time
-  // eoln ::= cr | lf | cr lf  
-  // private def eoln = rule { cr | lf | cr ~ lf }  
-  // cr ::= #xD /* US-ASCII carriage return - decimal 13 */  
-  // private def cr = CharPredicate('\r')
-  // lf ::= #xA /* US-ASCII linefeed - decimal 10 */   
-  // private def lf = CharPredicate('\n')
-
   // ws ::= space | tab  
-  private def ws = rule { space | tab }  
-
-  // space ::= #x20 /* US-ASCII space - decimal 32 */   
-  private def space = CharPredicate(' ')
-
-  // tab ::= #x9 /* US-ASCII horizontal tab - decimal 9 */  
-  private def tab = CharPredicate('\t')
-
-  // string ::= character* with escapes. Defined in section Strings  
-  private def string = ???
+  private def ws = CharPredicate(" \t")
 
   // name ::= [A-Za-z][A-Za-z0-9]*   
   private def name = rule {
-    CharPredicate.Alpha ~ zeroOrMore(CharPredicate.AlphaNum)
+    Alpha ~ zeroOrMore(AlphaNum)
   }
 
-
-  //
+  // ----
   // Taken directly from the Json parser example
   // https://github.com/sirthias/parboiled2/blob/master/examples/src/main/scala/org/parboiled2/examples/JsonParser.scala
   //
-
   def Characters = rule { zeroOrMore(NormalChar | '\\' ~ EscapedChar) }
 
   def NormalChar = rule { !QuoteBackslash ~ ANY ~ appendSB() }
@@ -153,12 +134,11 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
 
   def Unicode = rule { 'u' ~ capture(HexDigit ~ HexDigit ~ HexDigit ~ HexDigit) ~> (java.lang.Integer.parseInt(_, 16)) }
 
-  def WhiteSpace = rule { zeroOrMore(WhiteSpaceChar) }
-
+  // def WhiteSpace = rule { zeroOrMore(WhiteSpaceChar) }
   // def ws(c: Char) = rule { c ~ WhiteSpace }
-
-  val WhiteSpaceChar = CharPredicate(" \n\r\t\f")
+  // val WhiteSpaceChar = CharPredicate(" \n\r\t\f")
   val QuoteBackslash = CharPredicate("\"\\")
   val QuoteSlashBackSlash = QuoteBackslash ++ "/"
-
+  //
+  //----
 }
