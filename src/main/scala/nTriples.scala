@@ -7,11 +7,11 @@ object NTriples {
   // Main parsed types
   trait Line       // A parsed line; can either be Blank, Comment, or Triple
   trait Subject    // A triple's subject; can either be a uriref or namednode
-  trait Predicate  // A triple's predicate; can either be a uriref or namednode
+  trait Predicate  // A triple's predicate; must be a uriref
   trait Object     // A triple's object; will always be a uriref or or namednode or literal
 
   case class UriRef(uri: String) extends Subject with Object with Predicate
-  case class NamedNode(name: String) extends Subject with Object with Predicate
+  case class NamedNode(name: String) extends Subject with Object
   case class Literal(
     value: String,
     lang: Option[String],
@@ -37,8 +37,6 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
 
   import CharPredicate.{Alpha, AlphaNum, HexDigit, Printable}
   import NTriples._
-
-  // ntripleDoc ::= line*  
 
   // line ::= ws* (comment | triple) ? eoln  
   def line: Rule1[Line] = rule { blank | nonBlank }
@@ -102,9 +100,6 @@ class NTriples(val input: ParserInput) extends Parser with StringBuilding {
   private def dataType: Rule1[UriRef] = rule {
     2.times('^') ~ uriref
   }
-
-  // absoluteURI ::= ( character - ( '<' | '>' | space ) )+   
-  private def absoluteUri = ???
 
   // ws ::= space | tab  
   private def ws = CharPredicate(" \t")
